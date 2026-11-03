@@ -1,0 +1,15 @@
+name: astrbot_plugin_gacha
+display_name: 大福鱼抽卡机
+version: 1.0.0
+author: zsxbyyds
+repo: https://github.com/zsxbyyds/astrbot_plugin_gacha
+desc: 大福鱼主题的抽卡模拟器。抽卡次数只能靠跟机器人聊天随机掉落（或每日签到），抽到的角色进图鉴，五星带 90 抽硬保底。带一个 WebUI 抽卡主页看卡池和排行。
+short_desc: 聊天随机送抽、五星保底的抽卡小游戏
+astrbot_version: ">=4.13,<5"
+support_platforms:
+  - aiocqhttp
+  - qq_official
+  - qq_official_webhook
+  - telegram
+  - discord
+  - webchat

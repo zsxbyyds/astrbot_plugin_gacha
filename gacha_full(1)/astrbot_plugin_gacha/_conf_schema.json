@@ -1,0 +1,38 @@
+{
+  "ssr_rate": {
+    "description": "五星（SSR）出货概率",
+    "type": "float",
+    "hint": "0~1 之间的小数，默认 0.024 即 2.4%。",
+    "default": 0.024
+  },
+  "sr_rate": {
+    "description": "四星（SR）出货概率",
+    "type": "float",
+    "hint": "0~1 之间的小数，默认 0.12 即 12%。三星概率 = 1 - 五星 - 四星。",
+    "default": 0.12
+  },
+  "pity": {
+    "description": "五星硬保底抽数",
+    "type": "int",
+    "hint": "累计这么多抽还没出五星，下一抽必出。默认 90。",
+    "default": 90
+  },
+  "gift_chance": {
+    "description": "聊天掉落抽数的概率",
+    "type": "float",
+    "hint": "0~1 之间的小数，默认 0.25 即每次找机器人聊天有 25% 概率送一次。",
+    "default": 0.25
+  },
+  "gift_cooldown_sec": {
+    "description": "同一用户两次掉落的间隔（秒）",
+    "type": "int",
+    "hint": "防止刷屏，默认 180 秒。",
+    "default": 180
+  },
+  "daily_sign_draws": {
+    "description": "每日签到送的抽数",
+    "type": "int",
+    "hint": "默认 3 抽。",
+    "default": 3
+  }
+}

@@ -1,0 +1,1505 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>大福鱼抽卡机</title>
+<script src="/api/plugin/page/bridge-sdk.js"></script>
+<style>
+  :root {
+    --sea-950: #06101d;
+    --sea-900: #0a1726;
+    --sea-850: #0e1f33;
+    --sea-800: #12263f;
+    --sea-700: #1b3453;
+    --sea-600: #2a4a70;
+    --ink: #eaf1f8;
+    --muted: #8ca5bd;
+    --water: #3d84ff;
+    --water-soft: #79b0ff;
+    --coral: #ff6b4a;
+    --gold: #f5b73b;
+    --jade: #3fcaa0;
+    --slate: #8aa4bd;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 28px 20px;
+    background:
+      radial-gradient(1200px 500px at 50% -10%, #12345e 0%, transparent 60%),
+      linear-gradient(180deg, var(--sea-950), var(--sea-900) 40%);
+    color: var(--ink);
+    font: 14px/1.65 -apple-system, "Segoe UI", "Microsoft YaHei", "PingFang SC", sans-serif;
+    min-height: 100vh;
+  }
+  .wrap { max-width: 980px; margin: 0 auto; }
+  h1 {
+    font-size: 24px;
+    margin: 0;
+    letter-spacing: 0.5px;
+    font-weight: 800;
+  }
+  .sub { color: var(--muted); font-size: 13px; margin: 4px 0 22px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; }
+  .panel {
+    background: linear-gradient(180deg, var(--sea-800), var(--sea-850));
+    border: 1px solid var(--sea-700);
+    border-radius: 10px;
+    padding: 18px;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  }
+  .panel h2 {
+    font-size: 14px;
+    margin: 0 0 14px;
+    font-weight: 700;
+    color: var(--ink);
+    letter-spacing: 0.3px;
+  }
+  .panel h2::before {
+    content: "";
+    display: inline-block;
+    width: 3px;
+    height: 13px;
+    background: var(--water);
+    border-radius: 2px;
+    margin-right: 8px;
+    vertical-align: -1px;
+  }
+  .star-group { margin-bottom: 14px; }
+  .star-group:last-child { margin-bottom: 0; }
+  .star-title { font-size: 13px; margin-bottom: 7px; color: var(--ink); }
+  .star-title .rate { color: var(--muted); font-size: 12px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip {
+    padding: 4px 11px;
+    border-radius: 6px;
+    border: 1px solid var(--sea-700);
+    font-size: 13px;
+    background: rgba(255, 255, 255, 0.02);
+    color: var(--ink);
+  }
+  .chip.gold { border-color: rgba(245, 183, 59, 0.45); color: var(--gold); }
+  .chip.purple { border-color: rgba(63, 202, 160, 0.45); color: var(--jade); }
+  .chip.blue { border-color: rgba(138, 164, 189, 0.45); color: var(--slate); }
+  .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 12px; }
+  .card { text-align: center; }
+  .card-img {
+    width: 100%;
+    aspect-ratio: 5 / 7;
+    border-radius: 8px;
+    object-fit: cover;
+    border: 1px solid var(--sea-700);
+    display: block;
+    background: var(--sea-850);
+  }
+  .card-img.noimg {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--muted);
+    font-size: 12px;
+  }
+  .card-name { font-size: 13px; margin-top: 7px; font-weight: 600; }
+  .card-desc { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .card-img.unowned { filter: grayscale(1) brightness(0.5); opacity: 0.55; }
+  .card-count { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .card.locked .card-name { color: var(--muted); }
+  .res-bar { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 12px; }
+  .res-item {
+    background: var(--sea-850);
+    border: 1px solid var(--sea-700);
+    border-radius: 8px;
+    padding: 8px;
+    text-align: center;
+  }
+  .res-item .num { font-size: 17px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .res-item .label { font-size: 11px; color: var(--muted); margin-top: 1px; }
+  .char-card { border: 1px solid var(--sea-700); border-radius: 9px; padding: 11px 13px; margin-bottom: 9px; background: rgba(255, 255, 255, 0.015); }
+  .char-card .row1 { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+  .char-card .name { font-weight: 700; }
+  .char-card .star { font-size: 12px; }
+  .char-card .star.g5 { color: var(--gold); }
+  .char-card .star.g4 { color: var(--jade); }
+  .char-card .star.g3 { color: var(--slate); }
+  .char-card .lvl { color: var(--muted); font-size: 12px; }
+  .char-card .cstats { display: flex; gap: 12px; margin-top: 6px; font-size: 12px; color: var(--muted); }
+  .char-card .power { font-size: 12px; color: var(--coral); }
+  .aff-row { display: flex; align-items: center; justify-content: space-between; margin-top: 6px; }
+  .char-card .shards { font-size: 12px; color: var(--muted); }
+  .char-card .cacts { display: flex; gap: 8px; margin-top: 9px; flex-wrap: wrap; }
+  .exp-bar { height: 4px; background: var(--sea-700); border-radius: 2px; margin-top: 8px; overflow: hidden; }
+  .exp-bar > i { display: block; height: 100%; background: var(--water); border-radius: 2px; transition: width 0.2s; }
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 14px; }
+  .stat {
+    background: var(--sea-850);
+    border: 1px solid var(--sea-700);
+    border-radius: 9px;
+    padding: 13px;
+    text-align: center;
+  }
+  .stat .num { font-size: 23px; font-weight: 800; font-variant-numeric: tabular-nums; }
+  .stat .label { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--sea-700); }
+  th { font-size: 12px; color: var(--muted); font-weight: 600; }
+  th.num { text-align: right; }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .empty { color: var(--muted); text-align: center; padding: 20px 0; }
+  .status { color: var(--muted); font-size: 13px; margin-bottom: 14px; min-height: 18px; }
+  .status.err { color: var(--coral); }
+  .bind-row, .pull-row { display: flex; gap: 8px; margin-bottom: 12px; }
+  input[type="text"] {
+    flex: 1;
+    padding: 9px 12px;
+    border: 1px solid var(--sea-700);
+    border-radius: 7px;
+    background: var(--sea-850);
+    color: var(--ink);
+    font-size: 14px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+  input[type="text"]::placeholder { color: var(--muted); letter-spacing: 0; }
+  input[type="text"]:focus { outline: none; border-color: var(--water); }
+  button {
+    padding: 8px 16px;
+    border: 1px solid var(--sea-700);
+    border-radius: 7px;
+    background: var(--sea-800);
+    color: var(--ink);
+    font-size: 13px;
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s, background 0.15s;
+  }
+  button:hover { border-color: var(--water-soft); color: var(--water-soft); }
+  button.primary { background: var(--water); border-color: var(--water); color: #fff; }
+  button.primary:hover { background: var(--water-soft); border-color: var(--water-soft); color: #fff; }
+  button.small { padding: 4px 10px; font-size: 12px; }
+  button:disabled { opacity: 0.45; cursor: not-allowed; }
+  .pull-result { margin-top: 4px; }
+  .pull-result .item { padding: 5px 0; border-bottom: 1px dashed var(--sea-700); }
+  .pull-result .item:last-child { border-bottom: none; }
+  .pull-result .ssr { color: var(--gold); font-weight: 700; animation: ssr-pop 0.6s ease-out; }
+  @keyframes ssr-pop {
+    0% { transform: scale(0.6); opacity: 0; text-shadow: 0 0 0 rgba(255, 200, 60, 0); }
+    40% { transform: scale(1.15); opacity: 1; text-shadow: 0 0 16px rgba(255, 200, 60, 0.9); }
+    100% { transform: scale(1); text-shadow: 0 0 5px rgba(255, 200, 60, 0.45); }
+  }
+  .pull-result .sr { color: var(--jade); }
+  .pull-result .r { color: var(--slate); }
+  .pull-result .head { margin-bottom: 8px; font-weight: 600; }
+  .hint { color: var(--muted); font-size: 12px; margin-top: 6px; }
+  .topbar { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; }
+  .topbar h1 { flex: 1; }
+  .task-row { display: flex; align-items: center; gap: 10px; padding: 10px 13px; border: 1px solid var(--sea-700); border-radius: 9px; margin-bottom: 8px; background: rgba(255, 255, 255, 0.015); }
+  .task-row .mark { width: 20px; text-align: center; font-weight: 700; color: var(--sea-600); }
+  .task-row.done .mark { color: var(--jade); }
+  .task-row.done .tname { color: var(--muted); text-decoration: line-through; }
+  .task-row .tname { font-size: 14px; flex: 1; }
+  .task-row .treward { font-size: 12px; color: var(--muted); }
+  .chip.team-chip { cursor: pointer; user-select: none; }
+  .chip.team-chip.on { border-color: var(--water); color: var(--water-soft); background: rgba(61, 132, 255, 0.12); }
+  .stat.team-stat { cursor: pointer; user-select: none; padding: 8px 10px; }
+  .stat.team-stat .num { font-size: 14px; font-weight: 700; }
+  .stat.team-stat .label { font-size: 11px; }
+  .stat.team-stat.on { border-color: var(--water); background: rgba(61, 132, 255, 0.12); }
+  .stat.team-stat.on .num { color: var(--water-soft); }
+  .sort-row { display: flex; align-items: center; gap: 8px; margin: 0 0 10px; font-size: 12px; color: var(--muted); }
+  .sort-row select {
+    background: var(--sea-850);
+    color: var(--ink);
+    border: 1px solid var(--sea-700);
+    border-radius: 6px;
+    padding: 4px 8px;
+    font-size: 12px;
+  }
+  .sort-row select:focus { outline: none; border-color: var(--water); }
+  .result-box {
+    background: rgba(61, 132, 255, 0.10);
+    border: 1px solid var(--water);
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-bottom: 12px;
+    color: var(--ink);
+  }
+  .result-box.win { border-color: var(--jade); background: rgba(63, 202, 160, 0.10); }
+  .result-box.lose { border-color: var(--coral); background: rgba(255, 107, 74, 0.10); }
+  .battle-sec { margin: 14px 0 8px; font-size: 12px; color: var(--muted); }
+  .stage { display: flex; align-items: stretch; gap: 8px; margin: 4px 0 6px; }
+  .stage-side { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+  .stage-side.foe { align-items: center; justify-content: flex-start; }
+  .stage-vs { flex: 0 0 auto; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 18px; color: var(--coral); padding: 0 2px; }
+  .unit { display: flex; align-items: center; gap: 8px; }
+  .unit.dead { opacity: 0.42; filter: grayscale(1); }
+  .unit .uimg { width: 52px; height: 68px; border-radius: 7px; object-fit: cover; border: 1px solid var(--sea-700); background: var(--sea-850); flex: 0 0 auto; }
+  .unit .uimg.noimg { display: flex; align-items: center; justify-content: center; color: var(--muted); font-size: 10px; }
+  .unit .uinfo { flex: 1; min-width: 0; }
+  .unit .unm { font-size: 13px; font-weight: 700; }
+  .unit .uextra { font-size: 11px; color: var(--muted); margin-top: 1px; }
+  .unit .ubar { height: 8px; background: var(--sea-700); border-radius: 4px; overflow: hidden; margin-top: 4px; }
+  .unit .ubar > i { display: block; height: 100%; border-radius: 4px; transition: width 0.25s; background: var(--water-soft); }
+  .unit .uhp { font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; margin-top: 2px; }
+  .foe-card { width: 100%; max-width: 170px; text-align: center; }
+  .foe-card .fimg { width: 100%; aspect-ratio: 3 / 4; border-radius: 9px; object-fit: cover; border: 1px solid var(--sea-700); background: var(--sea-850); display: block; }
+  .foe-card.enraged .fimg { box-shadow: 0 0 0 2px var(--coral); }
+  .foe-card .fname { font-size: 14px; font-weight: 700; margin-top: 7px; }
+  .foe-card .fextra { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .foe-card .fbar { height: 10px; background: var(--sea-700); border-radius: 5px; overflow: hidden; margin-top: 6px; }
+  .foe-card .fbar > i { display: block; height: 100%; border-radius: 5px; background: var(--coral); transition: width 0.25s; }
+  .foe-card .fhp { font-size: 11px; color: var(--muted); margin-top: 3px; font-variant-numeric: tabular-nums; }
+  .hand { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .hand-card {
+    display: flex; align-items: center; gap: 10px;
+    border: 1px solid var(--water);
+    border-radius: 9px;
+    padding: 10px;
+    cursor: pointer;
+    background: rgba(61, 132, 255, 0.08);
+    transition: border-color 0.15s, background 0.15s, transform 0.1s;
+    user-select: none;
+  }
+  .hand-card:hover { background: rgba(61, 132, 255, 0.18); border-color: var(--water-soft); }
+  .hand-card:active { transform: scale(0.98); }
+  .hand-card .hcimg { width: 60px; height: 78px; border-radius: 7px; object-fit: cover; border: 1px solid var(--sea-700); background: var(--sea-850); flex: 0 0 auto; }
+  .hand-card .hcimg.noimg { display: flex; align-items: center; justify-content: center; color: var(--muted); font-size: 10px; }
+  .hand-card .hcinfo { flex: 1; min-width: 0; }
+  .hand-card .hnm { font-weight: 700; font-size: 14px; }
+  .hand-card .hmeta { font-size: 12px; color: var(--muted); margin-top: 3px; }
+  .hand-card .hele { font-size: 12px; color: var(--jade); margin-top: 4px; }
+  .battle-log { margin-top: 12px; font-size: 12px; color: var(--muted); max-height: 180px; overflow-y: auto; }
+  .battle-log div { padding: 2px 0; }
+  .battle-log .enrage { color: var(--coral); font-weight: 700; }
+  .battle-actions { display: flex; gap: 8px; margin-top: 12px; }
+  .enrage-tag { color: var(--coral); font-weight: 700; font-size: 12px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- 主页视图 -->
+  <div id="main-view">
+    <div class="topbar">
+      <h1>大福鱼抽卡机</h1>
+    </div>
+    <div class="sub">聊天随机掉抽数，攒够了抽。五星带保底，别上头。</div>
+    <div class="status" id="status">连接面板中…</div>
+
+    <div class="grid">
+      <div class="panel">
+        <h2>抽卡</h2>
+        <div class="bind-row">
+          <input id="bind-code" type="text" placeholder="绑定码，聊天发 /看板绑定" autocomplete="off" />
+          <button id="btn-save">保存</button>
+        </div>
+        <div class="pull-row" style="align-items:center">
+          <button id="btn-sign">签到</button>
+          <div class="hint" id="sign-result" style="margin:0"></div>
+        </div>
+        <div class="pull-row">
+          <button id="btn-one">单抽</button>
+          <button id="btn-ten" class="primary">十连</button>
+        </div>
+        <div class="pull-result" id="pull-result"></div>
+        <div class="hint">看板和聊天是同一份数据，抽到五星我私聊喊你。</div>
+      </div>
+
+      <div class="panel">
+        <h2>卡池</h2>
+        <div id="pool">加载中…</div>
+      </div>
+
+      <div class="panel">
+        <h2>我的</h2>
+        <div class="hint">图鉴、角色、每日任务和商店各占一屏，点下面进去看。</div>
+        <button id="btn-collection" class="primary" style="margin-top:12px">我的收集</button>
+        <button id="btn-chars" class="primary" style="margin-top:8px">我的角色</button>
+        <button id="btn-daily" class="primary" style="margin-top:8px">每日任务</button>
+        <button id="btn-shop" class="primary" style="margin-top:8px">商店</button>
+        <button id="btn-dungeon" class="primary" style="margin-top:8px">副本</button>
+      </div>
+
+      <div class="panel">
+        <h2>全局统计</h2>
+        <div class="stats">
+          <div class="stat"><div class="num" id="st-pulls">-</div><div class="label">累计抽数</div></div>
+          <div class="stat"><div class="num" id="st-ssr">-</div><div class="label">累计五星</div></div>
+          <div class="stat"><div class="num" id="st-users">-</div><div class="label">玩家数</div></div>
+        </div>
+        <div id="owned"></div>
+      </div>
+
+      <div class="panel" style="grid-column: 1 / -1;">
+        <h2>欧皇排行（按累计抽数）</h2>
+        <table>
+          <thead>
+            <tr><th>#</th><th>玩家</th><th class="num">累计抽数</th><th class="num">五星</th><th class="num">剩余抽数</th></tr>
+          </thead>
+          <tbody id="rank">
+            <tr><td colspan="5" class="empty">加载中…</td></tr>
+          </tbody>
+        </table>
+
+        <h2 style="margin-top:22px">非酋榜（抽满 10 次还没五星）</h2>
+        <table>
+          <thead>
+            <tr><th>#</th><th>玩家</th><th class="num">累计抽数</th><th class="num">当前保底</th></tr>
+          </thead>
+          <tbody id="rank-pity">
+            <tr><td colspan="4" class="empty">加载中…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- 收集视图 -->
+  <div id="collection-view" style="display:none">
+    <div class="topbar">
+      <button id="btn-back">← 返回</button>
+      <h1>我的收集</h1>
+    </div>
+    <div class="sub">你抽到过的卡片都在这，没抽到的灰着。</div>
+    <div class="status" id="c-status">连接中…</div>
+    <div class="bind-row" style="max-width:420px">
+      <input id="c-bind-code" type="text" placeholder="绑定码，聊天发 /看板绑定" autocomplete="off" />
+      <button id="c-btn-save" class="primary">保存</button>
+    </div>
+    <div class="bind-row" style="max-width:420px">
+      <button id="btn-free-pull" class="primary">免费一抽</button>
+      <span id="free-result" class="hint"></span>
+    </div>
+    <div id="collection">先填绑定码并保存，再看你的图鉴</div>
+  </div>
+
+  <!-- 角色视图 -->
+  <div id="chars-view" style="display:none">
+    <div class="topbar">
+      <button id="btn-back-chars">← 返回</button>
+      <h1>我的角色</h1>
+    </div>
+    <div class="sub">抽到的卡在这养成，吃经验书升级，到关键等级突破，重复卡转碎片。</div>
+    <div class="status" id="ch-status">连接中…</div>
+    <div class="bind-row" style="max-width:420px">
+      <input id="ch-bind-code" type="text" placeholder="绑定码，聊天发 /看板绑定" autocomplete="off" />
+      <button id="ch-btn-save" class="primary">保存</button>
+    </div>
+    <div id="chars-panel">先填绑定码并保存，再看你的角色</div>
+  </div>
+
+  <!-- 任务视图 -->
+  <div id="daily-view" style="display:none">
+    <div class="topbar">
+      <button id="btn-back-daily">← 返回</button>
+      <h1>每日任务</h1>
+    </div>
+    <div class="sub">每天 0 点刷新，完成自动打勾发奖。</div>
+    <div class="status" id="d-status">连接中…</div>
+    <div class="bind-row" style="max-width:420px">
+      <input id="d-bind-code" type="text" placeholder="绑定码，聊天发 /看板绑定" autocomplete="off" />
+      <button id="d-btn-save" class="primary">保存</button>
+    </div>
+    <div id="daily-panel">先填绑定码并保存，再看任务</div>
+  </div>
+
+  <!-- 商店视图 -->
+  <div id="shop-view" style="display:none">
+    <div class="topbar">
+      <button id="btn-back-shop">← 返回</button>
+      <h1>商店</h1>
+    </div>
+    <div class="sub">肥鱼币结算，缺啥补啥。</div>
+    <div class="status" id="s-status">连接中…</div>
+    <div class="bind-row" style="max-width:420px">
+      <input id="s-bind-code" type="text" placeholder="绑定码，聊天发 /看板绑定" autocomplete="off" />
+      <button id="s-btn-save" class="primary">保存</button>
+    </div>
+    <div id="shop-panel">先填绑定码并保存</div>
+  </div>
+
+  <!-- 副本视图 -->
+  <div id="dungeon-view" style="display:none">
+    <div class="topbar">
+      <button id="btn-back-dungeon">← 返回</button>
+      <h1>副本</h1>
+    </div>
+    <div class="sub">上阵三张卡，按战力打。赢了掉书和素材，输了也捡点零碎。</div>
+    <div class="status" id="g-status">连接中…</div>
+    <div class="bind-row" style="max-width:420px">
+      <input id="g-bind-code" type="text" placeholder="绑定码，聊天发 /看板绑定" autocomplete="off" />
+      <button id="g-btn-save" class="primary">保存</button>
+    </div>
+    <div id="dungeon-panel">先填绑定码并保存</div>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  var bridge = null;
+  var starMap = {};
+
+  function esc(s) {
+    return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+
+  function getBridge() {
+    return window.AstrBotPluginPage || window.AstrBotPluginView || null;
+  }
+
+  function waitBridge(timeoutMs) {
+    return new Promise(function (resolve) {
+      var started = Date.now();
+      (function tick() {
+        var b = getBridge();
+        if (b) return resolve(b);
+        if (Date.now() - started > timeoutMs) return resolve(null);
+        setTimeout(tick, 100);
+      })();
+    });
+  }
+
+  function unwrap(res) {
+    return res && res.data !== undefined ? res.data : res;
+  }
+
+  // ---------- 卡池（纯文字） ----------
+
+  function renderPool(data) {
+    var el = document.getElementById("pool");
+    if (!data || !data.pool) {
+      el.innerHTML = '<div class="empty">暂无卡池数据</div>';
+      return;
+    }
+    var rates = data.rates || {};
+    var groups = [
+      { star: "5", label: "五星", rate: num2pct(rates.ssr) },
+      { star: "4", label: "四星", rate: num2pct(rates.sr) },
+      { star: "3", label: "三星", rate: num2pct(rates.r) },
+    ];
+    var html = "";
+    for (var i = 0; i < groups.length; i++) {
+      var g = groups[i];
+      var chars = data.pool[g.star] || [];
+      var cls = g.star === "5" ? "gold" : (g.star === "4" ? "purple" : "blue");
+      var chips = "";
+      for (var j = 0; j < chars.length; j++) {
+        var ele = chars[j].element ? ' [' + esc(chars[j].element) + ']' : '';
+        chips += '<span class="chip ' + cls + '">' + esc(chars[j].name) + ele + '</span>';
+      }
+      html += '<div class="star-group"><div class="star-title">' + g.label +
+        ' <span class="rate">' + g.rate + '</span></div>' +
+        '<div class="chips">' + chips + '</div></div>';
+    }
+    if (data.up && data.up.char) {
+      html += '<div class="star-title" style="margin-top:12px">限定UP：' + esc(data.up.char) +
+        '（五星里出它 ' + Math.round((data.up.weight || 0) * 100) + '%）</div>';
+    }
+    html += '<div class="star-title" style="margin-top:12px">十连保底四星+，' +
+      esc(data.pity) + ' 抽硬保底五星</div>';
+    html += '<div class="hint">属性相克：金克木、木克土、土克水、水克火、火克金。</div>';
+    el.innerHTML = html;
+  }
+
+  function num2pct(v) {
+    var n = parseFloat(v);
+    if (isNaN(n)) return "—";
+    return (n * 100).toFixed(1) + "%";
+  }
+
+  function buildStarMap(poolData) {
+    starMap = {};
+    if (!poolData || !poolData.pool) return;
+    ["5", "4", "3"].forEach(function (s) {
+      (poolData.pool[s] || []).forEach(function (c) { starMap[c.name] = s; });
+    });
+  }
+
+  // ---------- 统计与排行 ----------
+
+  function renderStats(data) {
+    document.getElementById("st-pulls").textContent = data.total_pulls != null ? data.total_pulls : "-";
+    document.getElementById("st-ssr").textContent = data.total_ssr != null ? data.total_ssr : "-";
+    document.getElementById("st-users").textContent = data.users != null ? data.users : "-";
+    var owned = data.owned || {};
+    var keys = Object.keys(owned);
+    var ownedEl = document.getElementById("owned");
+    if (!keys.length) {
+      ownedEl.innerHTML = '<div class="empty">还没人出货</div>';
+      return;
+    }
+    ownedEl.innerHTML = '<div class="chips">' + keys.sort().map(function (k) {
+      var star = starMap[k] || "3";
+      var cls = star === "5" ? "gold" : (star === "4" ? "purple" : "blue");
+      return '<span class="chip ' + cls + '">' + esc(k) + ' ×' + esc(owned[k]) + '</span>';
+    }).join("") + '</div>';
+  }
+
+  function renderRank(data) {
+    var tbody = document.getElementById("rank");
+    var list = data.ranking || [];
+    if (!list.length) {
+      tbody.innerHTML = '<tr><td colspan="5" class="empty">还没人抽过</td></tr>';
+      return;
+    }
+    tbody.innerHTML = list.map(function (u, i) {
+      return '<tr><td>' + (i + 1) + '</td><td>' + esc(u.name) + '</td>' +
+        '<td class="num">' + esc(u.total) + '</td>' +
+        '<td class="num">' + esc(u.ssr) + '</td>' +
+        '<td class="num">' + esc(u.draws) + '</td></tr>';
+    }).join("");
+
+    var pbody = document.getElementById("rank-pity");
+    var plist = data.pity_ranking || [];
+    if (!plist.length) {
+      pbody.innerHTML = '<tr><td colspan="4" class="empty">暂时没有倒霉蛋</td></tr>';
+    } else {
+      pbody.innerHTML = plist.map(function (u, i) {
+        return '<tr><td>' + (i + 1) + '</td><td>' + esc(u.name) + '</td>' +
+          '<td class="num">' + esc(u.total) + '</td>' +
+          '<td class="num">' + esc(u.pity) + '</td></tr>';
+      }).join("");
+    }
+  }
+
+  async function load() {
+    var statusEl = document.getElementById("status");
+    try {
+      var pool = unwrap(await bridge.apiGet("pool"));
+      renderPool(pool);
+      buildStarMap(pool);
+      var stats = unwrap(await bridge.apiGet("stats"));
+      renderStats(stats);
+      renderRank(stats);
+      statusEl.textContent = "";
+    } catch (e) {
+      statusEl.textContent = "加载失败：" + (e.message || e);
+      statusEl.className = "status err";
+    }
+  }
+
+  // ---------- 收集 ----------
+
+  function renderCollection(data) {
+    var el = document.getElementById("collection");
+    if (!data || !data.full) {
+      el.innerHTML = '<div class="empty">暂无图鉴数据</div>';
+      return;
+    }
+    var groups = [
+      { star: "5", label: "五星" },
+      { star: "4", label: "四星" },
+      { star: "3", label: "三星" },
+    ];
+    var html = "";
+    for (var i = 0; i < groups.length; i++) {
+      var g = groups[i];
+      var chars = data.full.filter(function (c) { return c.star === g.star; });
+      var cardsHtml = "";
+      for (var j = 0; j < chars.length; j++) {
+        var c = chars[j];
+        var got = c.count > 0;
+        var img = c.image
+          ? '<img class="card-img' + (got ? '' : ' unowned') + '" src="' + c.image + '" alt="' + esc(c.name) + '" />'
+          : '<div class="card-img noimg' + (got ? '' : ' unowned') + '">' + esc(c.name) + '</div>';
+        var count = got ? '<div class="card-count">×' + c.count + '</div>' : '<div class="card-count">未获得</div>';
+        cardsHtml += '<div class="card' + (got ? '' : ' locked') + '">' + img +
+          '<div class="card-name">' + esc(c.name) + '</div>' +
+          '<div class="card-desc">' + esc(c.desc) + '</div>' + count + '</div>';
+      }
+      html += '<div class="star-group"><div class="star-title">' + g.label + '</div>' +
+        '<div class="cards">' + cardsHtml + '</div></div>';
+    }
+    if (data.title) {
+      html += '<div class="hint" style="margin-top:10px">当前称号：' + esc(data.title) + '</div>';
+    }
+    html += '<div class="hint">已收集 ' + data.collected_kinds + '/' + data.total_kinds + ' 种</div>';
+    var achs = data.achievements || [];
+    if (achs.length) {
+      var achHtml = '';
+      for (var k = 0; k < achs.length; k++) {
+        var a = achs[k];
+        achHtml += '<div class="task-row' + (a.done ? ' done' : '') + '">' +
+          '<span class="mark">' + (a.done ? '✓' : '○') + '</span>' +
+          '<span class="tname">' + esc(a.name) + '</span>' +
+          '<span class="treward">' + esc(a.desc) + '</span></div>';
+      }
+      html += '<div class="sub" style="margin:14px 0 8px">收集成就</div>' + achHtml;
+    }
+    html += '<div class="sub" style="margin:14px 0 8px">抽卡记录</div>';
+    html += '<div class="hint">距下次五星保底还差 ' + (data.pity_left || 0) + ' 抽，今日免费一抽剩 ' + (data.free_pull || 0) + ' 次</div>';
+    var log = data.pull_log || [];
+    if (!log.length) {
+      html += '<div class="hint">还没有抽卡记录。</div>';
+    } else {
+      for (var m = 0; m < log.length; m++) {
+        var r = log[m];
+        var d = new Date(r.t * 1000);
+        var hh = ('0' + d.getHours()).slice(-2);
+        var mm = ('0' + d.getMinutes()).slice(-2);
+        var mk = r.star === '5' ? '🌟' : (r.star === '4' ? '⭐' : '·');
+        html += '<div class="task-row">' +
+          '<span class="mark">' + mk + '</span>' +
+          '<span class="tname">' + esc(r.name) + '</span>' +
+          '<span class="treward">' + (d.getMonth() + 1) + '-' + ('0' + d.getDate()).slice(-2) + ' ' + hh + ':' + mm + '</span></div>';
+      }
+    }
+    el.innerHTML = html;
+  }
+
+  async function loadCollection() {
+    var el = document.getElementById("collection");
+    var statusEl = document.getElementById("c-status");
+    if (!code) {
+      el.innerHTML = '<div class="empty">先填绑定码并保存，再看你的图鉴</div>';
+      statusEl.textContent = "";
+      return;
+    }
+    try {
+      var res = unwrap(await bridge.apiPost("collection", { code: code }));
+      if (res && res.status === "error") {
+        el.innerHTML = '<div class="empty">' + esc(res.message) + '</div>';
+      } else {
+        renderCollection(res);
+      }
+      statusEl.textContent = "";
+    } catch (e) {
+      el.innerHTML = '<div class="empty">收集加载失败</div>';
+      statusEl.textContent = "加载失败：" + (e.message || e);
+      statusEl.className = "status err";
+    }
+  }
+
+  async function doFreePull() {
+    var resultEl = document.getElementById("free-result");
+    if (!code) {
+      resultEl.textContent = "先填绑定码并保存";
+      return;
+    }
+    resultEl.textContent = "抽卡中…";
+    try {
+      var res = unwrap(await bridge.apiPost("free_pull", { code: code }));
+      if (res && res.status === "error") {
+        resultEl.textContent = res.message;
+      } else {
+        var names = (res.results || []).map(function (r) {
+          var mk = r.star === "5" ? "🌟" : (r.star === "4" ? "⭐" : "·");
+          return mk + r.name;
+        }).join("  ");
+        resultEl.textContent = names + "（保底还差 " + (res.pity_left || 0) + " 抽）";
+        loadCollection();
+      }
+    } catch (e) {
+      resultEl.textContent = "免费抽失败：" + (e.message || e);
+    }
+  }
+
+  // ---------- 角色养成 ----------
+
+  var charResult = null;   // 养成结果，持久显示直到下次操作
+  var charSort = "default"; // 角色排序：default/power/star
+
+  function starLabel(star) {
+    return star === "5" ? "五星" : (star === "4" ? "四星" : "三星");
+  }
+
+  function renderChars(data) {
+    var el = document.getElementById("chars-panel");
+    if (!data || data.status === "error") {
+      el.innerHTML = '<div class="empty">' + esc(data && data.message ? data.message : "加载失败") + '</div>';
+      return;
+    }
+    var mats = data.mats || {};
+    var resHtml = '';
+    if (charResult) {
+      resHtml += '<div class="result-box">' + charResult + '</div>';
+    }
+    resHtml += '<div class="res-bar">' +
+      '<div class="res-item"><div class="num">' + esc(data.coins) + '</div><div class="label">肥鱼币</div></div>' +
+      '<div class="res-item"><div class="num">' + esc(data.exp) + '</div><div class="label">经验书</div></div>' +
+      '<div class="res-item"><div class="num">' + esc(data.stamina) + '/' + esc(data.max_stamina) + '</div><div class="label">体力</div></div>' +
+      '<div class="res-item"><div class="num">' + esc(data.total_power) + '</div><div class="label">总战力</div></div>' +
+      '</div>';
+    resHtml += '<div class="hint">素材：三星 ' + esc(mats["3"]) + ' / 四星 ' + esc(mats["4"]) + ' / 五星 ' + esc(mats["5"]) + '</div>';
+
+    resHtml += '<div class="sort-row">排序：<select id="char-sort">' +
+      '<option value="default"' + (charSort === "default" ? ' selected' : '') + '>默认</option>' +
+      '<option value="power"' + (charSort === "power" ? ' selected' : '') + '>战力高→低</option>' +
+      '<option value="star"' + (charSort === "star" ? ' selected' : '') + '>星级高→低</option>' +
+      '</select></div>';
+
+    var chars = (data.chars || []).slice();
+    if (charSort === "power") {
+      chars.sort(function (a, b) { return (b.power || 0) - (a.power || 0); });
+    } else if (charSort === "star") {
+      chars.sort(function (a, b) { return Number(b.star || 0) - Number(a.star || 0) || (b.power || 0) - (a.power || 0); });
+    }
+    var charsHtml = "";
+    if (!chars.length) {
+      charsHtml = '<div class="empty">还没抽到卡，去 /十连 吧</div>';
+    } else {
+      for (var i = 0; i < chars.length; i++) {
+        var c = chars[i];
+        var sc = c.star === "5" ? "g5" : (c.star === "4" ? "g4" : "g3");
+        var lvFull = c.level >= c.max_lv;
+        var pct = 0;
+        if (!lvFull && c.need_exp > 0) {
+          pct = Math.min(100, Math.round((c.char_exp || 0) / c.need_exp * 100));
+        }
+        var expBar = lvFull
+          ? ''
+          : '<div class="exp-bar"><i style="width:' + pct + '%"></i></div>';
+        var rkCtrl = c.max_rk > c.rk
+          ? '<button class="small rk-btn" data-name="' + esc(c.name) + '">升阶 ' + c.rk_cost + ' 片</button>'
+          : '<span class="shards">已满阶</span>';
+        var trainCtrl = lvFull
+          ? '<span class="shards">已满级</span>'
+          : '<button class="small train-btn" data-name="' + esc(c.name) + '">喂经验书</button>';
+        var btCtrl = c.bt >= c.max_bt
+          ? '<span class="shards">突破满</span>'
+          : '<button class="small bt-btn" data-name="' + esc(c.name) + '">突破(需 Lv.' + c.bt_need_lv + ' + ' + c.bt_need_mat + '素材)</button>';
+        var eleTag = c.element ? '<span class="shards">' + esc(c.element) + '属性</span>' : '';
+        charsHtml += '<div class="char-card">' +
+          '<div class="row1"><span class="name">' + esc(c.name) + '</span>' +
+          '<span class="star ' + sc + '">' + starLabel(c.star) + '</span>' + eleTag +
+          '<span class="lvl">Lv.' + c.level + '/' + c.max_lv + (lvFull ? '' : '　' + (c.char_exp || 0) + '/' + c.need_exp) + '</span></div>' +
+          '<div class="row1"><span class="power">战力 ' + c.power + '</span>' +
+          '<span class="shards">突破 ' + c.bt + '/' + c.max_bt + ' 阶 · 升阶 ' + c.rk + '/' + c.max_rk + ' · 碎片 ' + c.shards + '</span></div>' +
+          '<div class="cstats"><span>攻 ' + c.atk + '</span><span>防 ' + c.def + '</span><span>血 ' + c.hp + '</span></div>' +
+          '<div class="aff-row"><span class="shards">好感 ' + (c.aff || 0) + '/' + (c.aff_max || 100) + '</span>' +
+          '<button class="small aff-btn" data-name="' + esc(c.name) + '">摸摸</button></div>' +
+          expBar +
+          '<div class="cacts">' + rkCtrl + trainCtrl + btCtrl + '</div>' +
+          '</div>';
+      }
+    }
+    el.innerHTML = resHtml + charsHtml;
+  }
+
+  async function loadChars() {
+    var el = document.getElementById("chars-panel");
+    var statusEl = document.getElementById("ch-status");
+    if (!code) {
+      el.innerHTML = '<div class="empty">先填绑定码并保存，再看你的角色</div>';
+      statusEl.textContent = "";
+      return;
+    }
+    try {
+      var res = unwrap(await bridge.apiPost("chars", { code: code }));
+      renderChars(res);
+      statusEl.textContent = "";
+    } catch (e) {
+      el.innerHTML = '<div class="empty">角色加载失败</div>';
+      statusEl.textContent = "加载失败：" + (e.message || e);
+      statusEl.className = "status err";
+    }
+  }
+
+  async function doRk(name) {
+    var statusEl = document.getElementById("ch-status");
+    charResult = null;
+    try {
+      var res = unwrap(await bridge.apiPost("rk", { code: code, name: name }));
+      if (res && res.status === "error") {
+        statusEl.textContent = res.message;
+        statusEl.className = "status err";
+      } else {
+        charResult = esc(res.message);
+        statusEl.textContent = "";
+        statusEl.className = "status";
+        loadChars();
+        refreshDailyIfVisible();
+      }
+    } catch (e) {
+      statusEl.textContent = "升阶失败：" + (e.message || e);
+      statusEl.className = "status err";
+    }
+  }
+
+  async function doTrain(name) {
+    var statusEl = document.getElementById("ch-status");
+    charResult = null;
+    try {
+      var res = unwrap(await bridge.apiPost("train", { code: code, name: name, qty: 1 }));
+      if (res && res.status === "error") {
+        statusEl.textContent = res.message;
+        statusEl.className = "status err";
+      } else {
+        charResult = esc(res.message);
+        statusEl.textContent = "";
+        statusEl.className = "status";
+        loadChars();
+        refreshDailyIfVisible();
+      }
+    } catch (e) {
+      statusEl.textContent = "升级失败：" + (e.message || e);
+      statusEl.className = "status err";
+    }
+  }
+
+  async function doBt(name) {
+    var statusEl = document.getElementById("ch-status");
+    charResult = null;
+    try {
+      var res = unwrap(await bridge.apiPost("bt", { code: code, name: name }));
+      if (res && res.status === "error") {
+        statusEl.textContent = res.message;
+        statusEl.className = "status err";
+      } else {
+        charResult = esc(res.message);
+        statusEl.textContent = "";
+        statusEl.className = "status";
+        loadChars();
+        refreshDailyIfVisible();
+      }
+    } catch (e) {
+      statusEl.textContent = "突破失败：" + (e.message || e);
+      statusEl.className = "status err";
+    }
+  }
+
+  async function doAff(name) {
+    var statusEl = document.getElementById("ch-status");
+    charResult = null;
+    try {
+      var res = unwrap(await bridge.apiPost("aff", { code: code, name: name }));
+      if (res && res.status === "error") {
+        statusEl.textContent = res.message;
+        statusEl.className = "status err";
+      } else {
+        charResult = esc(res.message);
+        statusEl.textContent = "";
+        statusEl.className = "status";
+        loadChars();
+      }
+    } catch (e) {
+      statusEl.textContent = "摸摸失败：" + (e.message || e);
+      statusEl.className = "status err";
+    }
+  }
+
+  // ---------- 每日任务 ----------
+
+  function renderDaily(data) {
+    var el = document.getElementById("daily-panel");
+    if (!data || data.status === "error") {
+      el.innerHTML = '<div class="empty">' + esc(data && data.message ? data.message : "加载失败") + '</div>';
+      return;
+    }
+    var tasks = data.tasks || [];
+    var html = "";
+    for (var i = 0; i < tasks.length; i++) {
+      var t = tasks[i];
+      var mark = t.done ? "✓" : "○";
+      html += '<div class="task-row' + (t.done ? ' done' : '') + '">' +
+        '<span class="mark">' + mark + '</span>' +
+        '<span class="tname">' + esc(t.name) + '</span>' +
+        '<span class="treward">' + esc(t.reward || "") + '</span></div>';
+    }
+    html += '<div class="hint">完成自动发奖，每天 0 点刷新。</div>';
+    el.innerHTML = html;
+  }
+
+  async function loadDaily() {
+    var el = document.getElementById("daily-panel");
+    var statusEl = document.getElementById("d-status");
+    if (!code) {
+      el.innerHTML = '<div class="empty">先填绑定码并保存，再看任务</div>';
+      statusEl.textContent = "";
+      return;
+    }
+    try {
+      var res = unwrap(await bridge.apiPost("daily", { code: code }));
+      renderDaily(res);
+      statusEl.textContent = "";
+    } catch (e) {
+      el.innerHTML = '<div class="empty">任务加载失败</div>';
+      statusEl.textContent = "加载失败：" + (e.message || e);
+      statusEl.className = "status err";
+    }
+  }
+
+  function refreshDailyIfVisible() {
+    if (window.location.hash === "#daily" && bridge && code) {
+      loadDaily();
+    }
+  }
+
+  // ---------- 商店 ----------
+
+  var shopResult = null;   // 购买结果，持久显示直到下次购买
+
+  function renderShop(data) {
+    var el = document.getElementById("shop-panel");
+    if (!data || data.status === "error") {
+      el.innerHTML = '<div class="empty">' + esc(data && data.message ? data.message : "加载失败") + '</div>';
+      return;
+    }
+    var html = '';
+    if (shopResult) {
+      html += '<div class="result-box">' + shopResult + '</div>';
+    }
+    html += '<div class="res-bar"><div class="res-item"><div class="num">' + esc(data.coins) + '</div><div class="label">肥鱼币</div></div></div>';
+    var items = data.items || [];
+    html += '<div class="cards" style="grid-template-columns:repeat(auto-fill,minmax(150px,1fr))">';
+    for (var i = 0; i < items.length; i++) {
+      var it = items[i];
+      html += '<div class="char-card">' +
+        '<div class="row1"><span class="name">' + esc(it.name) + '</span></div>' +
+        '<div class="cstats"><span>' + esc(it.coins) + ' 币</span></div>' +
+        '<div class="cacts"><button class="small buy-btn" data-name="' + esc(it.name) + '">买 1</button></div>' +
+        '</div>';
+    }
+    html += '</div><div class="hint">一次买一份，缺大量就多按几下。</div>';
+    el.innerHTML = html;
+  }
+
+  async function loadShop() {
+    var el = document.getElementById("shop-panel");
+    var statusEl = document.getElementById("s-status");
+    if (!code) {
+      el.innerHTML = '<div class="empty">先填绑定码并保存</div>';
+      statusEl.textContent = "";
+      return;
+    }
+    try {
+      var res = unwrap(await bridge.apiPost("shop", { code: code }));
+      renderShop(res);
+      statusEl.textContent = "";
+    } catch (e) {
+      el.innerHTML = '<div class="empty">商店加载失败</div>';
+      statusEl.textContent = "加载失败：" + (e.message || e);
+      statusEl.className = "status err";
+    }
+  }
+
+  async function doBuy(name) {
+    var statusEl = document.getElementById("s-status");
+    shopResult = null;
+    try {
+      var res = unwrap(await bridge.apiPost("buy", { code: code, item: name, qty: 1 }));
+      if (res && res.status === "error") {
+        statusEl.textContent = res.message;
+        statusEl.className = "status err";
+      } else {
+        shopResult = esc(res.message);
+        statusEl.textContent = "";
+        statusEl.className = "status";
+        loadShop();
+      }
+    } catch (e) {
+      statusEl.textContent = "购买失败：" + (e.message || e);
+      statusEl.className = "status err";
+    }
+  }
+
+  // ---------- 副本 ----------
+
+  var dungeonSel = [];
+  var dungeonData = { d: null, c: null };
+  var gResult = null;   // 挑战结果，持久显示直到下次挑战
+  var battleState = null;   // 进行中的回合战斗状态
+  var teamSort = "default"; // 上阵候选排序：default/power/star
+
+  function renderDungeons(dData, cData) {
+    var el = document.getElementById("dungeon-panel");
+    if (battleState) {
+      if (battleState.finished) { renderBattleResult(el, battleState); }
+      else { renderBattlePanel(el, battleState); }
+      return;
+    }
+    if (!dData || dData.status === "error") {
+      el.innerHTML = '<div class="empty">' + esc(dData && dData.message ? dData.message : "加载失败") + '</div>';
+      return;
+    }
+    var chars = ((cData && cData.chars) || []).slice();
+    if (teamSort === "power") {
+      chars.sort(function (a, b) { return (b.power || 0) - (a.power || 0); });
+    } else if (teamSort === "star") {
+      chars.sort(function (a, b) { return Number(b.star || 0) - Number(a.star || 0) || (b.power || 0) - (a.power || 0); });
+    }
+    var teamNames = (dData.team || []).map(function (t) { return t.name; });
+    if (!dungeonSel.length && teamNames.length) dungeonSel = teamNames.slice();
+    var have = {};
+    chars.forEach(function (c) { have[c.name] = true; });
+    dungeonSel = dungeonSel.filter(function (n) { return have[n]; });
+
+    var html = '';
+    if (gResult) {
+      html += '<div class="result-box' + (gResult.win ? ' win' : ' lose') + '">' + gResult.text + '</div>';
+    }
+    html += '<div class="res-bar">' +
+      '<div class="res-item"><div class="num">' + esc(dData.stamina) + '/' + esc(dData.max_stamina) + '</div><div class="label">体力</div></div>' +
+      '<div class="res-item"><div class="num">' + esc(dData.power) + '</div><div class="label">当前队伍战力</div></div>' +
+      '</div>';
+
+    html += '<div class="sort-row">排序：<select id="team-sort">' +
+      '<option value="default"' + (teamSort === "default" ? ' selected' : '') + '>默认</option>' +
+      '<option value="power"' + (teamSort === "power" ? ' selected' : '') + '>战力高→低</option>' +
+      '<option value="star"' + (teamSort === "star" ? ' selected' : '') + '>星级高→低</option>' +
+      '</select></div>';
+    html += '<div class="sub" style="margin:0 0 8px">上阵（点框切换，最多 3 张）</div>';
+    if (!chars.length) {
+      html += '<div class="hint">还没卡，去 /十连 抽几张再来。</div>';
+    } else {
+      html += '<div class="stats">' + chars.map(function (c) {
+        var on = dungeonSel.indexOf(c.name) >= 0;
+        return '<div class="stat team-stat' + (on ? ' on' : '') + '" data-name="' + esc(c.name) + '">' +
+          '<div class="num">' + esc(c.name) + '</div>' +
+          '<div class="label">' + (c.element ? esc(c.element) + ' · ' : '') + '战力 ' + esc(c.power) + '</div></div>';
+      }).join("") + '</div>';
+      html += '<button class="primary small save-team-btn" style="margin-top:10px">保存队伍</button>';
+    }
+
+    html += '<div class="sub" style="margin:14px 0 8px">副本列表（回合制：手牌选卡，首领半血狂暴，赢掉词条）</div>';
+    var ds = dData.dungeons || [];
+    html += ds.map(function (d) {
+      var dropsHtml = '';
+      if (d.drops && d.drops.win) {
+        dropsHtml += '<div class="hint" style="margin-top:4px">掉落：' + esc(d.drops.win) + '</div>';
+      }
+      if (d.drops && d.drops.lose) {
+        dropsHtml += '<div class="hint" style="margin-top:2px">失败保底：' + esc(d.drops.lose) + '</div>';
+      }
+      return '<div class="char-card">' +
+        '<div class="row1"><span class="name">' + esc(d.name) + '</span>' +
+        '<span class="shards">' + (d.element ? esc(d.element) + '属性 · ' : '') + '需求 ' + esc(d.power) + ' · 体力 ' + esc(d.stamina) + '</span></div>' +
+        '<div class="hint" style="margin-top:2px">' + esc(d.desc) + '</div>' +
+        dropsHtml +
+        '<div class="cacts"><button class="small challenge-btn" data-id="' + esc(d.id) + '">出战</button></div>' +
+        '</div>';
+    }).join("");
+    el.innerHTML = html;
+  }
+
+  async function loadDungeons() {
+    var el = document.getElementById("dungeon-panel");
+    var statusEl = document.getElementById("g-status");
+    if (!code) {
+      el.innerHTML = '<div class="empty">先填绑定码并保存</div>';
+      statusEl.textContent = "";
+      return;
+    }
+    try {
+      var dRes = unwrap(await bridge.apiPost("dungeons", { code: code }));
+      var cRes = unwrap(await bridge.apiPost("chars", { code: code }));
+      dungeonData.d = dRes;
+      dungeonData.c = cRes;
+      renderDungeons(dRes, cRes);
+      statusEl.textContent = "";
+    } catch (e) {
+      el.innerHTML = '<div class="empty">副本加载失败</div>';
+      statusEl.textContent = "加载失败：" + (e.message || e);
+      statusEl.className = "status err";
+    }
+  }
+
+  async function doSaveTeam() {
+    var statusEl = document.getElementById("g-status");
+    try {
+      var res = unwrap(await bridge.apiPost("team", { code: code, names: dungeonSel }));
+      if (res && res.status === "error") {
+        statusEl.textContent = res.message;
+        statusEl.className = "status err";
+      } else {
+        statusEl.textContent = res.message;
+        statusEl.className = "status";
+        loadDungeons();
+      }
+    } catch (e) {
+      statusEl.textContent = "保存失败：" + (e.message || e);
+      statusEl.className = "status err";
+    }
+  }
+
+  async function doChallenge(id) {
+    var statusEl = document.getElementById("g-status");
+    gResult = null;
+    battleState = null;
+    try {
+      var res = unwrap(await bridge.apiPost("challenge", { code: code, id: id }));
+      if (res && res.status === "error") {
+        statusEl.textContent = res.message;
+        statusEl.className = "status err";
+      } else {
+        battleState = res.battle || null;
+        statusEl.textContent = "";
+        statusEl.className = "status";
+        renderDungeons(dungeonData.d, dungeonData.c);
+      }
+    } catch (e) {
+      statusEl.textContent = "挑战失败：" + (e.message || e);
+      statusEl.className = "status err";
+    }
+  }
+
+  function renderBattlePanel(el, b) {
+    var boss = b.boss || {};
+    var pct = boss.max_hp ? Math.max(0, Math.round(boss.hp / boss.max_hp * 100)) : 0;
+    var html = '<div class="char-card">' +
+      '<div class="row1"><span class="name">' + esc(b.dungeon_name || "副本") + '</span>' +
+      '<span class="shards">第 ' + esc(b.turn) + ' 回合</span></div>' +
+      '</div>';
+
+    html += '<div class="stage">';
+    // 我方角色团
+    html += '<div class="stage-side">';
+    (b.party || []).forEach(function (p) {
+      var apct = p.max_hp ? Math.max(0, Math.round(p.hp / p.max_hp * 100)) : 0;
+      var uimg = p.img ? '<img class="uimg" src="cards/' + esc(p.img) + '" alt="' + esc(p.name) + '" />' : '<div class="uimg noimg">' + esc(p.name) + '</div>';
+      html += '<div class="unit' + (p.alive ? '' : ' dead') + '">' + uimg +
+        '<div class="uinfo"><div class="unm">' + esc(p.name) + '</div>' +
+        '<div class="uextra">' + (p.element ? esc(p.element) + ' · ' : '') + starLabel(p.star) + '</div>' +
+        '<div class="ubar"><i style="width:' + (p.alive ? apct : 0) + '%"></i></div>' +
+        '<div class="uhp">' + (p.alive ? esc(p.hp) + '/' + esc(p.max_hp) : '倒下') + '</div></div></div>';
+    });
+    html += '</div>';
+    // 分隔
+    html += '<div class="stage-vs">VS</div>';
+    // 对手
+    var fimg = boss.img ? '<img class="fimg" src="cards/' + esc(boss.img) + '" alt="' + esc(boss.name) + '" />' : '<div class="fimg noimg">' + esc(boss.name || "首领") + '</div>';
+    html += '<div class="stage-side foe"><div class="foe-card' + (boss.enraged ? ' enraged' : '') + '">' + fimg +
+      '<div class="fname">' + esc(boss.name || "首领") + (boss.enraged ? ' <span class="enrage-tag">狂暴</span>' : '') + '</div>' +
+      '<div class="fextra">' + (boss.element ? esc(boss.element) + '属性 · ' : '') + (boss.phase === 2 ? '二阶段' : '一阶段') + '</div>' +
+      '<div class="fbar"><i style="width:' + pct + '%"></i></div>' +
+      '<div class="fhp">' + esc(boss.hp) + '/' + esc(boss.max_hp) + '</div>' +
+      '</div></div>';
+    html += '</div>';
+
+    // 手牌
+    html += '<div class="battle-sec">你的手牌（点一张打出去）</div>';
+    if ((b.hand || []).length) {
+      html += '<div class="hand">' + b.hand.map(function (c) {
+        var cimg = c.img ? '<img class="hcimg" src="cards/' + esc(c.img) + '" alt="' + esc(c.name) + '" />' : '<div class="hcimg noimg">' + esc(c.name) + '</div>';
+        return '<div class="hand-card" data-card="' + esc(c.name) + '">' + cimg +
+          '<div class="hcinfo"><div class="hnm">' + esc(c.name) + '</div>' +
+          '<div class="hmeta">' + (c.element ? esc(c.element) + ' · ' : '') + starLabel(c.star) + ' · 攻 ' + esc(c.atk) + '</div>' +
+          '<div class="hele">点我出手</div></div></div>';
+      }).join("") + '</div>';
+    } else {
+      html += '<div class="empty">没有可出手的卡</div>';
+    }
+
+    html += '<div class="battle-log">' + (b.log || []).map(function (s) {
+      var isEnrage = s.indexOf("狂暴") >= 0;
+      return '<div class="' + (isEnrage ? 'enrage' : '') + '">' + esc(s) + '</div>';
+    }).join("") + '</div>';
+
+    html += '<div class="battle-actions"><button class="small battle-quit-btn">逃跑（体力不退）</button></div>';
+    el.innerHTML = html;
+  }
+
+  function renderBattleResult(el, b) {
+    var rw = b.rewards || {};
+    var win = !!b.win;
+    var html = '<div class="result-box' + (win ? ' win' : ' lose') + '">' +
+      '<div style="font-weight:700">' + (win ? '通关！' : '挑战失败') + ' · ' + esc(b.dungeon_name || "") + '</div>';
+    if (rw.text_str) {
+      html += '<div class="hint">' + (win ? '掉落：' : '保底：') + esc(rw.text_str) + '</div>';
+    }
+    html += '</div>';
+    html += '<div class="battle-log">' + (b.log || []).map(function (s) {
+      return '<div class="' + (s.indexOf("狂暴") >= 0 ? 'enrage' : '') + '">' + esc(s) + '</div>';
+    }).join("") + '</div>';
+    html += '<div class="battle-actions"><button class="primary small battle-close-btn">返回副本</button></div>';
+    el.innerHTML = html;
+  }
+
+  async function doBattleTurn(cardName) {
+    var statusEl = document.getElementById("g-status");
+    try {
+      var res = unwrap(await bridge.apiPost("battle_turn", { code: code, card: cardName }));
+      if (res && res.status === "error") {
+        statusEl.textContent = res.message;
+        statusEl.className = "status err";
+        battleState = null;
+        loadDungeons();
+        return;
+      }
+      battleState = res.battle || battleState;
+      statusEl.textContent = "";
+      statusEl.className = "status";
+      renderDungeons(dungeonData.d, dungeonData.c);
+      if (battleState && battleState.finished) refreshDailyIfVisible();
+    } catch (e) {
+      statusEl.textContent = "出手失败：" + (e.message || e);
+      statusEl.className = "status err";
+    }
+  }
+
+  async function doBattleQuit() {
+    var statusEl = document.getElementById("g-status");
+    try {
+      await bridge.apiPost("battle_quit", { code: code });
+    } catch (e) {}
+    battleState = null;
+    statusEl.textContent = "";
+    statusEl.className = "status";
+    loadDungeons();
+  }
+
+  function doBattleClose() {
+    battleState = null;
+    loadDungeons();
+  }
+
+  // ---------- 视图切换 ----------
+
+  function applyView() {
+    var isCollection = window.location.hash === "#collection";
+    var isChars = window.location.hash === "#chars";
+    var isDaily = window.location.hash === "#daily";
+    var isShop = window.location.hash === "#shop";
+    var isDungeon = window.location.hash === "#dungeon";
+    document.getElementById("main-view").style.display = (isCollection || isChars || isDaily || isShop || isDungeon) ? "none" : "";
+    document.getElementById("collection-view").style.display = isCollection ? "" : "none";
+    document.getElementById("chars-view").style.display = isChars ? "" : "none";
+    document.getElementById("daily-view").style.display = isDaily ? "" : "none";
+    document.getElementById("shop-view").style.display = isShop ? "" : "none";
+    document.getElementById("dungeon-view").style.display = isDungeon ? "" : "none";
+    if (isCollection && bridge) loadCollection();
+    if (isChars && bridge) loadChars();
+    if (isDaily && bridge) loadDaily();
+    if (isShop && bridge) loadShop();
+    if (isDungeon && bridge) loadDungeons();
+  }
+
+  window.addEventListener("hashchange", applyView);
+
+  // ---------- 绑定码 ----------
+
+  var code = "";
+  try {
+    var qs = new URLSearchParams(window.location.search);
+    code = (qs.get("code") || localStorage.getItem("gacha_code") || "").trim().toUpperCase();
+  } catch (e) {
+    try { code = (localStorage.getItem("gacha_code") || "").trim().toUpperCase(); } catch (e2) {}
+  }
+
+  function saveCode(raw) {
+    code = String(raw || "").trim().toUpperCase();
+    try { localStorage.setItem("gacha_code", code); } catch (e) {}
+    return code;
+  }
+
+  // ---------- 抽卡 ----------
+
+  function setBusy(b) {
+    document.getElementById("btn-one").disabled = b;
+    document.getElementById("btn-ten").disabled = b;
+  }
+
+  function renderPullResult(data) {
+    var el = document.getElementById("pull-result");
+    if (!data || !data.results) {
+      el.innerHTML = '<div class="hint">' + (data && data.message ? esc(data.message) : "出错了") + '</div>';
+      return;
+    }
+    var head = "花了 " + data.results.length + " 抽";
+    if (data.ssr_hits) head += "，出了 " + data.ssr_hits + " 个五星！";
+    head += "，剩 " + data.draws + " 抽";
+    var items = data.results.map(function (r) {
+      var cls = r.star === "5" ? "ssr" : (r.star === "4" ? "sr" : "r");
+      var mark = r.star === "5" ? "✦ 五星" : (r.star === "4" ? "◆ 四星" : "· 三星");
+      return '<div class="item ' + cls + '">' + mark + ' ' + esc(r.name) + '</div>';
+    }).join("");
+    var taskLine = data.task_msg ? '<div class="hint">' + esc(data.task_msg) + '</div>' : '';
+    el.innerHTML = '<div class="head">' + esc(head) + '</div>' + items + taskLine;
+    load();
+    refreshDailyIfVisible();
+  }
+
+  async function doPull(times) {
+    if (!code) {
+      document.getElementById("pull-result").innerHTML = '<div class="hint">先填绑定码（聊天发 /看板绑定）</div>';
+      return;
+    }
+    setBusy(true);
+    try {
+      var res = unwrap(await bridge.apiPost("pull", { code: code, times: times }));
+      if (res && res.status === "error") {
+        document.getElementById("pull-result").innerHTML = '<div class="hint">' + esc(res.message) + '</div>';
+      } else {
+        renderPullResult(res);
+      }
+    } catch (e) {
+      document.getElementById("pull-result").innerHTML = '<div class="hint">抽卡失败：' + esc(e.message || e) + '</div>';
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function doSign() {
+    var el = document.getElementById("sign-result");
+    if (!code) {
+      el.textContent = "先填绑定码（聊天发 /看板绑定）";
+      return;
+    }
+    var btn = document.getElementById("btn-sign");
+    btn.disabled = true;
+    try {
+      var res = unwrap(await bridge.apiPost("sign", { code: code }));
+      if (res && res.status === "error") {
+        el.textContent = res.message;
+      } else {
+        el.textContent = (res.message || "").replace(/\n/g, " ");
+        load();
+        refreshDailyIfVisible();
+      }
+    } catch (e) {
+      el.textContent = "签到失败：" + (e.message || e);
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  // ---------- 初始化 ----------
+
+  function init() {
+    document.getElementById("bind-code").value = code;
+    document.getElementById("c-bind-code").value = code;
+    document.getElementById("ch-bind-code").value = code;
+    document.getElementById("d-bind-code").value = code;
+    document.getElementById("s-bind-code").value = code;
+    document.getElementById("g-bind-code").value = code;
+
+    document.getElementById("btn-save").addEventListener("click", function () {
+      saveCode(document.getElementById("bind-code").value);
+      document.getElementById("pull-result").innerHTML = '<div class="hint">绑定码已保存</div>';
+    });
+    document.getElementById("btn-sign").addEventListener("click", doSign);
+    document.getElementById("btn-free-pull").addEventListener("click", doFreePull);
+    document.getElementById("c-btn-save").addEventListener("click", function () {
+      saveCode(document.getElementById("c-bind-code").value);
+      loadCollection();
+    });
+    document.getElementById("ch-btn-save").addEventListener("click", function () {
+      saveCode(document.getElementById("ch-bind-code").value);
+      loadChars();
+    });
+    document.getElementById("d-btn-save").addEventListener("click", function () {
+      saveCode(document.getElementById("d-bind-code").value);
+      loadDaily();
+    });
+    document.getElementById("s-btn-save").addEventListener("click", function () {
+      saveCode(document.getElementById("s-bind-code").value);
+      loadShop();
+    });
+    document.getElementById("g-btn-save").addEventListener("click", function () {
+      saveCode(document.getElementById("g-bind-code").value);
+      loadDungeons();
+    });
+
+    document.getElementById("btn-one").addEventListener("click", function () { doPull(1); });
+    document.getElementById("btn-ten").addEventListener("click", function () { doPull(10); });
+
+    document.getElementById("btn-collection").addEventListener("click", function () {
+      window.location.hash = "collection";
+    });
+    document.getElementById("btn-back").addEventListener("click", function () {
+      window.location.hash = "main";
+    });
+    document.getElementById("btn-chars").addEventListener("click", function () {
+      window.location.hash = "chars";
+    });
+    document.getElementById("btn-back-chars").addEventListener("click", function () {
+      window.location.hash = "main";
+    });
+    document.getElementById("btn-daily").addEventListener("click", function () {
+      window.location.hash = "daily";
+    });
+    document.getElementById("btn-back-daily").addEventListener("click", function () {
+      window.location.hash = "main";
+    });
+    document.getElementById("btn-shop").addEventListener("click", function () {
+      window.location.hash = "shop";
+    });
+    document.getElementById("btn-back-shop").addEventListener("click", function () {
+      window.location.hash = "main";
+    });
+    document.getElementById("btn-dungeon").addEventListener("click", function () {
+      window.location.hash = "dungeon";
+    });
+    document.getElementById("btn-back-dungeon").addEventListener("click", function () {
+      window.location.hash = "main";
+    });
+
+    document.getElementById("chars-panel").addEventListener("click", function (e) {
+      var btn = e.target && e.target.closest ? e.target.closest(".rk-btn, .train-btn, .bt-btn, .aff-btn") : null;
+      if (!btn) return;
+      if (btn.classList.contains("train-btn")) doTrain(btn.getAttribute("data-name"));
+      else if (btn.classList.contains("bt-btn")) doBt(btn.getAttribute("data-name"));
+      else if (btn.classList.contains("aff-btn")) doAff(btn.getAttribute("data-name"));
+      else doRk(btn.getAttribute("data-name"));
+    });
+    document.getElementById("chars-panel").addEventListener("change", function (e) {
+      if (e.target && e.target.id === "char-sort") {
+        charSort = e.target.value;
+        loadChars();
+      }
+    });
+    document.getElementById("shop-panel").addEventListener("click", function (e) {
+      var btn = e.target && e.target.closest ? e.target.closest(".buy-btn") : null;
+      if (btn) doBuy(btn.getAttribute("data-name"));
+    });
+    document.getElementById("dungeon-panel").addEventListener("click", function (e) {
+      var t = e.target;
+      var chip = t.closest ? t.closest(".team-stat") : null;
+      if (chip) {
+        var name = chip.getAttribute("data-name");
+        var i = dungeonSel.indexOf(name);
+        if (i >= 0) {
+          dungeonSel.splice(i, 1);
+        } else if (dungeonSel.length < 3) {
+          dungeonSel.push(name);
+        } else {
+          var st = document.getElementById("g-status");
+          st.textContent = "最多上阵 3 张。";
+          st.className = "status err";
+        }
+        renderDungeons(dungeonData.d, dungeonData.c);
+        return;
+      }
+      var saveBtn = t.closest ? t.closest(".save-team-btn") : null;
+      if (saveBtn) { doSaveTeam(); return; }
+      var chalBtn = t.closest ? t.closest(".challenge-btn") : null;
+      if (chalBtn) { doChallenge(chalBtn.getAttribute("data-id")); return; }
+      var handCard = t.closest ? t.closest(".hand-card") : null;
+      if (handCard) { doBattleTurn(handCard.getAttribute("data-card")); return; }
+      var quitBtn = t.closest ? t.closest(".battle-quit-btn") : null;
+      if (quitBtn) { doBattleQuit(); return; }
+      var closeBtn = t.closest ? t.closest(".battle-close-btn") : null;
+      if (closeBtn) { doBattleClose(); return; }
+    });
+    document.getElementById("dungeon-panel").addEventListener("change", function (e) {
+      if (e.target && e.target.id === "team-sort") {
+        teamSort = e.target.value;
+        renderDungeons(dungeonData.d, dungeonData.c);
+      }
+    });
+
+    applyView();
+  }
+
+  waitBridge(8000).then(function (b) {
+    bridge = b;
+    if (!b) {
+      document.getElementById("status").textContent = "未连接面板，请从 AstrBot WebUI 的插件页面打开";
+      document.getElementById("status").className = "status err";
+      return;
+    }
+    setTimeout(load, 300);
+    init();
+    // 每日任务视图开着时，每 15 秒刷新一次，聊天里完成的任务能实时打勾
+    setInterval(function () {
+      if (window.location.hash === "#daily" && bridge && code) {
+        loadDaily();
+      }
+    }, 15000);
+  });
+})();
+</script>
+</body>
+</html>
